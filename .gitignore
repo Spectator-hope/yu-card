@@ -1,0 +1,15 @@
+# 依赖与本地运行缓存
+web/node_modules/
+web/.cache/
+
+# Blender 本机偏好与自动备份
+tools/blender-config/
+*.blend1
+
+# Python 临时缓存
+__pycache__/
+*.py[cod]
+
+# 操作系统临时文件
+Thumbs.db
+.DS_Store

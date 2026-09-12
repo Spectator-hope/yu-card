@@ -1,0 +1,26 @@
+{
+  "mode": "holographic",
+  "title": "月下青鸾",
+  "subtitle": "花影回眸",
+  "technique": "流光照夜",
+  "tagline": "回眸一瞬，银饰生辉",
+  "edition": "001 / 001",
+  "collection": "东方幻彩典藏",
+  "description": "朱柱掩映，青鸾于月色与花影间回首。",
+  "font": "C:/Windows/Fonts/simkai.ttf",
+  "parameters": {
+    "subjectScale": 1.16,
+    "subjectDepth": 0.34,
+    "backgroundDepth": -0.22,
+    "foil": 0.82,
+    "particles": 0.78,
+    "glow": 0.68
+  },
+  "safeArea": {
+    "scale": 1.06,
+    "offset": [
+      -0.03,
+      -0.02
+    ]
+  }
+}
