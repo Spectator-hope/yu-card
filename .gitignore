@@ -3,7 +3,7 @@ web/node_modules/
 web/.cache/
 
 # Blender 本机偏好与自动备份
-tools/blender-config/
+**/tools/blender-config/
 *.blend1
 
 # Python 临时缓存

@@ -9,7 +9,6 @@ const stage=document.querySelector('#stage'), loading=document.querySelector('#l
 const $=id=>document.getElementById(id);
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let renderer,composer,root,face,uniforms,config,auto=false,flipped=false,dragging=false;
-let catalog,activeCardId;
 let targetX=0.025,targetY=-0.13,targetZoom=1,rotationX=targetX,rotationY=targetY;
 let last={x:0,y:0},lastTime=0,elapsed=0;
 const scene=new THREE.Scene();
@@ -28,10 +27,6 @@ vec3 overlay(vec3 b,vec3 f){return mix(2.*b*f,1.-2.*(1.-b)*(1.-f),step(vec3(.5),
 float inside(vec2 p){return step(0.,p.x)*step(0.,p.y)*step(p.x,1.)*step(p.y,1.);}
 vec2 parallax(vec2 p,float s,float d){return (p-.5)*s+.5+uView.xy/max(abs(uView.z),.35)*d*.14;}
 float wave(vec2 p){vec2 a=p+uView.xy*2.4;return .5+.5*sin((a.x*.848-a.y*.530)*6.283*.55+7.*noise(a*1.5));}
-float roundedBoxSdf(vec2 p,vec2 b,float r){vec2 q=abs(p)-b+r;return length(max(q,0.))+min(max(q.x,q.y),0.)-r;}
-float frameLines(vec2 uv){vec2 p=uv-.5;float outer=roundedBoxSdf(p,vec2(.475),.028);float inner=roundedBoxSdf(p,vec2(.454),.022);float outerLine=1.-smoothstep(.001,.005,abs(outer));float innerLine=1.-smoothstep(.001,.005,abs(inner));return max(outerLine,innerLine);}
-float diamondMark(vec2 p,vec2 c,float size){float d=abs(p.x-c.x)+abs(p.y-c.y);return 1.-smoothstep(size,size+.004,d);}
-float cornerMarks(vec2 uv){float mark=0.;mark=max(mark,diamondMark(uv,vec2(.055,.055),.012));mark=max(mark,diamondMark(uv,vec2(.945,.055),.012));mark=max(mark,diamondMark(uv,vec2(.055,.945),.012));mark=max(mark,diamondMark(uv,vec2(.945,.945),.012));return mark;}
 float star(vec2 p){vec2 q=p*105.,id=floor(q),f=fract(q);float first=9.,second=9.;for(int y=-1;y<=1;y++){for(int x=-1;x<=1;x++){vec2 g=vec2(float(x),float(y));vec2 o=vec2(hash(id+g),hash(id+g+43.3));float d=length(g+o-f);if(d<first){second=first;first=d;}else second=min(second,d);}}float edge=1.-smoothstep(.01,.035,second-first);float sparse=step(.90,hash(id+8.8));float twinkle=pow(.5+.5*sin(uTime*1.8+hash(id)*30.+uView.x*27.+uView.y*21.),6.);return edge*sparse*twinkle;}
 `;
 const fragment=shared+`
@@ -52,7 +47,6 @@ void main(){
  col+=vec3(1.,.94,.78)*line*inside(su)*sub.a*sweep*uFoil*.22;
  col+=vec3(.66,.86,1.)*star(bu)*uFoil*.65*(1.-sub.a*.7);
  vec4 text=texture2D(tText,uv);col=mix(col,text.rgb,text.a);
- float frame=frameLines(uv);float corners=cornerMarks(uv);vec3 gold=mix(vec3(.98,.78,.4),spectrum(wave(uv)+.12),.2+.22*uFoil);float shimmer=.72+.28*pow(max(0.,sin((uv.x*.9+uv.y*.42+uView.x*1.7)*6.283)),8.);col+=gold*(frame*(.72+.35*uFoil)*shimmer+corners*(.95+.35*uFoil));
  // 保留印刷色彩饱和度，并以选择性高亮驱动辉光后期。
  gl_FragColor=vec4(pow(max(col,vec3(0.)),vec3(2.2)),1.);
  #include <tonemapping_fragment>
@@ -64,39 +58,17 @@ const edgeFragment=shared+`void main(){vec3 col=mix(vec3(.55,.34,.1),spectrum(wa
 }`;
 // 卡背与正面共用 UV，从反向观察时需要进行镜像补偿。
 const backFragment=shared+`uniform sampler2D tBack;
-void main(){vec4 art=texture2D(tBack,vec2(1.-vUv.x,vUv.y));vec2 p=vUv-.5;float filigree=.5+.5*sin(length(p*vec2(1.,1.5))*100.+noise(p*15.)*4.);vec3 col=mix(vec3(.025,.042,.064),vec3(.085,.092,.11),filigree*.35);col+=spectrum(wave(vUv))*uFoil*.08;col=mix(col,art.rgb,art.a);
-float frame=frameLines(vUv);float corners=cornerMarks(vUv);vec3 gold=mix(vec3(.98,.78,.4),spectrum(wave(vUv)+.12),.2+.22*uFoil);col+=gold*(frame*(.72+.35*uFoil)+corners*(.95+.35*uFoil));gl_FragColor=vec4(pow(col,vec3(2.2)),1.);
+void main(){vec4 art=texture2D(tBack,vec2(1.-vUv.x,vUv.y));vec2 p=vUv-.5;float filigree=.5+.5*sin(length(p*vec2(1.,1.5))*100.+noise(p*15.)*4.);vec3 col=mix(vec3(.025,.042,.064),vec3(.085,.092,.11),filigree*.35);float border=step(.465,max(abs(p.x),abs(p.y)));col=mix(col,spectrum(wave(vUv))*.55,border);col+=spectrum(wave(vUv))*uFoil*.08;col=mix(col,art.rgb,art.a);gl_FragColor=vec4(pow(col,vec3(2.2)),1.);
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
 }`;
 function backTexture(){const c=document.createElement('canvas');c.width=1024;c.height=1536;const ctx=c.getContext('2d');ctx.clearRect(0,0,1024,1536);ctx.strokeStyle='#c2a368';ctx.lineWidth=2;ctx.strokeRect(74,74,876,1388);ctx.strokeRect(87,87,850,1362);ctx.save();ctx.translate(512,650);ctx.rotate(Math.PI/4);ctx.strokeRect(-210,-210,420,420);ctx.strokeRect(-196,-196,392,392);ctx.restore();ctx.textAlign='center';ctx.fillStyle='#dbc18b';ctx.font='166px KaiTi, STKaiti, serif';ctx.fillText(config.subtitle?.includes('雷')?'雷':'幻',512,709);ctx.font='31px KaiTi, STKaiti, serif';ctx.fillText(config.collection||'幻光典藏',512,1050);ctx.font='20px Georgia';ctx.fillStyle='#a09a8f';ctx.fillText('HOLOGRAPHIC ATELIER',512,1114);ctx.font='20px Georgia';ctx.fillText(config.edition||'001',512,1310);const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.NoColorSpace;return tex;}
-async function loadSelectedCard(){
- const response=await fetch('./card-catalog.json');
- if(!response.ok)throw Error('找不到卡牌目录');
- catalog=await response.json();
- const requested=new URLSearchParams(location.search).get('card');
- const entry=catalog.cards.find(item=>item.id===requested)||catalog.cards.find(item=>item.id===catalog.default)||catalog.cards[0];
- if(!entry)throw Error('卡牌目录为空');
- activeCardId=entry.id;
- const configResponse=await fetch(entry.config);
- if(!configResponse.ok)throw Error('找不到卡牌配置：'+entry.label);
- return configResponse.json();
-}
-function setupCardSwitcher(){
- const nav=document.createElement('nav');nav.className='card-switcher';nav.setAttribute('aria-label','切换收藏卡');
- const caption=document.createElement('span');caption.textContent='COLLECTION INDEX';nav.append(caption);
- const list=document.createElement('div');list.className='card-list';nav.append(list);
- for(const entry of catalog.cards){const button=document.createElement('button');button.type='button';button.className='card-option';button.setAttribute('aria-pressed',String(entry.id===activeCardId));const number=document.createElement('span');number.textContent=entry.number;const label=document.createElement('strong');label.textContent=entry.label;button.append(number,label);button.onclick=()=>{if(entry.id===activeCardId)return;stage.classList.add('is-switching');setTimeout(()=>{const next=new URL(location.href);next.searchParams.set('card',entry.id);location.assign(next);},180);};list.append(button);}
- document.querySelector('.display').prepend(nav);
- const active=catalog.cards.find(item=>item.id===activeCardId);const edition=document.querySelector('.edition');if(active&&edition.firstChild)edition.firstChild.textContent='COLLECTION '+active.number+' ';
-}
 async function init(){
- config=await loadSelectedCard();
- setupCardSwitcher();
+ config=await fetch('./card-config.json').then(r=>{if(!r.ok)throw Error('找不到卡牌配置');return r.json();});
  document.title=config.title+' · 幻光典藏';for(const [id,key]of Object.entries({'card-title':'title','collection':'collection','subtitle':'subtitle','description':'description','tagline':'tagline','technique':'technique','edition':'edition'}))if(config[key])$(id).textContent=config[key];
- renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true,powerPreference:'high-performance'});renderer.setClearColor(0xffffff,0);renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;stage.append(renderer.domElement);
+ renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,preserveDrawingBuffer:true,powerPreference:'high-performance'});renderer.setClearColor(0xffffff,1);renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;stage.append(renderer.domElement);
  composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));composer.addPass(new UnrealBloomPass(new THREE.Vector2(720,1000),.18,.35,1.0));composer.addPass(new OutputPass());
- const loader=new THREE.TextureLoader();const names=['subject','background','text','lineart'];const textures=await Promise.all(names.map(name=>loader.loadAsync(config.assets[name])));textures.forEach(t=>{t.colorSpace=THREE.NoColorSpace;t.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);});const displayBackdrop=await loader.loadAsync(config.assets.displayBackdrop);displayBackdrop.colorSpace=THREE.SRGBColorSpace;scene.background=displayBackdrop;
+ const loader=new THREE.TextureLoader();const names=['subject','background','text','lineart'];const textures=await Promise.all(names.map(name=>loader.loadAsync(config.assets[name])));textures.forEach(t=>{t.colorSpace=THREE.NoColorSpace;t.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);});
  const prm=config.parameters||{};uniforms={tSubject:{value:textures[0]},tBackground:{value:textures[1]},tText:{value:textures[2]},tLine:{value:textures[3]},tBack:{value:backTexture()},uTime:{value:0},uView:{value:new THREE.Vector3(0,0,1)},uFoil:{value:prm.foil??.65},uScale:{value:prm.subjectScale??1.25},uDepth:{value:prm.subjectDepth??.4},uBgDepth:{value:prm.backgroundDepth??-.25},uSafeScale:{value:config.safeArea?.scale??1.12},uSafeOffset:{value:new THREE.Vector2(...(config.safeArea?.offset??[-.06,-.085]))}};
  const frontMat=new THREE.ShaderMaterial({uniforms,vertexShader:vertex,fragmentShader:fragment,side:THREE.FrontSide});const edgeMat=new THREE.ShaderMaterial({uniforms,vertexShader:vertex,fragmentShader:edgeFragment});const backMat=new THREE.ShaderMaterial({uniforms,vertexShader:vertex,fragmentShader:backFragment});const goldMat=new THREE.MeshBasicMaterial({color:0xbfa26b});
  const gltf=await new GLTFLoader().loadAsync(config.assets.model);root=new THREE.Group();root.add(gltf.scene);scene.add(root);

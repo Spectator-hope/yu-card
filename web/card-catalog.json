@@ -1,0 +1,17 @@
+{
+  "default": "moon-bluebird",
+  "cards": [
+    {
+      "id": "moon-bluebird",
+      "number": "01",
+      "label": "月下青鸾",
+      "config": "./card-config.json"
+    },
+    {
+      "id": "osmanthus-cat",
+      "number": "02",
+      "label": "桂影猫眠",
+      "config": "./cards/osmanthus-cat/card-config.json"
+    }
+  ]
+}

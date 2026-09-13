@@ -1,0 +1,33 @@
+{
+  "mode": "holographic",
+  "title": "桂影猫眠",
+  "subtitle": "闲庭相依",
+  "technique": "柔光听风",
+  "tagline": "桂香落袖，猫卧膝前",
+  "edition": "002 / 002",
+  "collection": "东方幻彩典藏",
+  "description": "一庭桂影，一怀软雪，在午后水光里相依。",
+  "font": "C:/Windows/Fonts/simkai.ttf",
+  "parameters": {
+    "subjectScale": 1.08,
+    "subjectDepth": 0.3,
+    "backgroundDepth": -0.2,
+    "foil": 0.72,
+    "particles": 0.68,
+    "glow": 0.58
+  },
+  "safeArea": {
+    "scale": 1.02,
+    "offset": [
+      -0.01,
+      -0.01
+    ]
+  },
+  "assets": {
+    "subject": "./assets/subject.png",
+    "background": "./assets/background.png",
+    "text": "./assets/text.png",
+    "lineart": "./assets/lineart.png",
+    "model": "./assets/card.glb"
+  }
+}
