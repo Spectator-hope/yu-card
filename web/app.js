@@ -27,6 +27,10 @@ vec3 overlay(vec3 b,vec3 f){return mix(2.*b*f,1.-2.*(1.-b)*(1.-f),step(vec3(.5),
 float inside(vec2 p){return step(0.,p.x)*step(0.,p.y)*step(p.x,1.)*step(p.y,1.);}
 vec2 parallax(vec2 p,float s,float d){return (p-.5)*s+.5+uView.xy/max(abs(uView.z),.35)*d*.14;}
 float wave(vec2 p){vec2 a=p+uView.xy*2.4;return .5+.5*sin((a.x*.848-a.y*.530)*6.283*.55+7.*noise(a*1.5));}
+float roundedBoxSdf(vec2 p,vec2 b,float r){vec2 q=abs(p)-b+r;return length(max(q,0.))+min(max(q.x,q.y),0.)-r;}
+float frameLines(vec2 uv){vec2 p=uv-.5;float outer=roundedBoxSdf(p,vec2(.475),.028);float inner=roundedBoxSdf(p,vec2(.454),.022);float outerLine=1.-smoothstep(.001,.005,abs(outer));float innerLine=1.-smoothstep(.001,.005,abs(inner));return max(outerLine,innerLine);}
+float diamondMark(vec2 p,vec2 c,float size){float d=abs(p.x-c.x)+abs(p.y-c.y);return 1.-smoothstep(size,size+.004,d);}
+float cornerMarks(vec2 uv){float mark=0.;mark=max(mark,diamondMark(uv,vec2(.055,.055),.012));mark=max(mark,diamondMark(uv,vec2(.945,.055),.012));mark=max(mark,diamondMark(uv,vec2(.055,.945),.012));mark=max(mark,diamondMark(uv,vec2(.945,.945),.012));return mark;}
 float star(vec2 p){vec2 q=p*105.,id=floor(q),f=fract(q);float first=9.,second=9.;for(int y=-1;y<=1;y++){for(int x=-1;x<=1;x++){vec2 g=vec2(float(x),float(y));vec2 o=vec2(hash(id+g),hash(id+g+43.3));float d=length(g+o-f);if(d<first){second=first;first=d;}else second=min(second,d);}}float edge=1.-smoothstep(.01,.035,second-first);float sparse=step(.90,hash(id+8.8));float twinkle=pow(.5+.5*sin(uTime*1.8+hash(id)*30.+uView.x*27.+uView.y*21.),6.);return edge*sparse*twinkle;}
 `;
 const fragment=shared+`
@@ -47,6 +51,7 @@ void main(){
  col+=vec3(1.,.94,.78)*line*inside(su)*sub.a*sweep*uFoil*.22;
  col+=vec3(.66,.86,1.)*star(bu)*uFoil*.65*(1.-sub.a*.7);
  vec4 text=texture2D(tText,uv);col=mix(col,text.rgb,text.a);
+ float frame=frameLines(uv);float corners=cornerMarks(uv);vec3 gold=mix(vec3(.98,.78,.4),spectrum(wave(uv)+.12),.2+.22*uFoil);float shimmer=.72+.28*pow(max(0.,sin((uv.x*.9+uv.y*.42+uView.x*1.7)*6.283)),8.);col+=gold*(frame*(.72+.35*uFoil)*shimmer+corners*(.95+.35*uFoil));
  // Keep print saturation; the selective high luminance feeds the bloom pass.
  gl_FragColor=vec4(pow(max(col,vec3(0.)),vec3(2.2)),1.);
  #include <tonemapping_fragment>
@@ -58,7 +63,8 @@ const edgeFragment=shared+`void main(){vec3 col=mix(vec3(.55,.34,.1),spectrum(wa
 }`;
 // The rear shares the front UVs; compensate for viewing it from the opposite side.
 const backFragment=shared+`uniform sampler2D tBack;
-void main(){vec4 art=texture2D(tBack,vec2(1.-vUv.x,vUv.y));vec2 p=vUv-.5;float filigree=.5+.5*sin(length(p*vec2(1.,1.5))*100.+noise(p*15.)*4.);vec3 col=mix(vec3(.025,.042,.064),vec3(.085,.092,.11),filigree*.35);float border=step(.465,max(abs(p.x),abs(p.y)));col=mix(col,spectrum(wave(vUv))*.55,border);col+=spectrum(wave(vUv))*uFoil*.08;col=mix(col,art.rgb,art.a);gl_FragColor=vec4(pow(col,vec3(2.2)),1.);
+void main(){vec4 art=texture2D(tBack,vec2(1.-vUv.x,vUv.y));vec2 p=vUv-.5;float filigree=.5+.5*sin(length(p*vec2(1.,1.5))*100.+noise(p*15.)*4.);vec3 col=mix(vec3(.025,.042,.064),vec3(.085,.092,.11),filigree*.35);col+=spectrum(wave(vUv))*uFoil*.08;col=mix(col,art.rgb,art.a);
+float frame=frameLines(vUv);float corners=cornerMarks(vUv);vec3 gold=mix(vec3(.98,.78,.4),spectrum(wave(vUv)+.12),.2+.22*uFoil);col+=gold*(frame*(.72+.35*uFoil)+corners*(.95+.35*uFoil));gl_FragColor=vec4(pow(col,vec3(2.2)),1.);
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
 }`;
