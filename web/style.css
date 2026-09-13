@@ -11,9 +11,11 @@ dialog::backdrop{background:#ffffffee}
 #stage{background:#fffaf0 url("./assets/display-backdrop.png") center/cover no-repeat}
 
 /* 收藏卡切换器 */
-.card-switcher{position:absolute;left:20px;top:42px;z-index:4;display:grid;gap:9px;padding:12px;background:#fffdf5d9;border:1px solid #b9954d38;box-shadow:0 14px 38px #6b512112;backdrop-filter:blur(12px)}
-.card-switcher>span{font:7px Georgia,serif;letter-spacing:2.2px;color:#8b7040}
-.card-list{display:grid;gap:5px}
+.card-switcher{position:relative;width:min(280px,100%);margin-top:34px;padding:10px;background:#fffdf5d9;border:1px solid #b9954d38;box-shadow:0 14px 38px #6b512112;backdrop-filter:blur(12px);transition:box-shadow .25s ease}
+.card-switcher:hover{box-shadow:0 18px 44px #6b51211c}
+.card-switcher-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:5px 7px;text-align:left;color:#6e5b35}
+.card-switcher-copy{display:grid;gap:5px}.card-switcher-copy small{font:7px Georgia,serif;letter-spacing:2.2px;color:#a1844e}.card-switcher-copy strong{font:400 13px "KaiTi","STKaiti",serif;letter-spacing:2px}.card-switcher-icon{display:grid;place-items:center;width:25px;height:25px;border:1px solid #b9954d66;border-radius:50%;font:18px Georgia,serif;line-height:1;color:#a17d35;transition:transform .25s ease,background .25s ease}.card-switcher-toggle:hover .card-switcher-icon{background:#fff}.card-switcher.is-collapsed .card-switcher-icon{transform:rotate(-90deg)}
+.card-list{display:grid;gap:5px;margin-top:9px;overflow:hidden;max-height:180px;transition:max-height .3s ease,opacity .2s ease,margin-top .3s ease}.card-switcher.is-collapsed .card-list{max-height:0;margin-top:0;opacity:0;pointer-events:none}
 .card-option{display:grid;grid-template-columns:22px 1fr;align-items:center;gap:7px;min-width:118px;padding:7px 9px;text-align:left;border:1px solid transparent;color:#696052;transition:border-color .2s,background .2s,color .2s}
 .card-option span{font:9px Georgia,serif;color:#a1844e}
 .card-option strong{font:400 11px "KaiTi","STKaiti",serif;letter-spacing:2px;white-space:nowrap}
@@ -22,5 +24,5 @@ dialog::backdrop{background:#ffffffee}
 .card-option[aria-pressed=true] span{color:#f8e6b7}
 #stage canvas{transition:opacity .18s ease,transform .18s ease,filter .18s ease}
 #stage.is-switching canvas{opacity:.18;transform:scale(.985);filter:saturate(.45)}
-@media(max-width:760px){.card-switcher{left:14px;top:34px;padding:8px}.card-switcher>span{display:none}.card-list{display:flex}.card-option{min-width:auto;grid-template-columns:18px 1fr;padding:6px 8px}.card-option strong{font-size:10px;letter-spacing:1px}}
+@media(max-width:760px){.card-switcher{width:100%;margin-top:26px;padding:8px}.card-switcher-toggle{padding:4px 6px}.card-list{display:flex;flex-wrap:wrap}.card-option{flex:1;min-width:125px;grid-template-columns:18px 1fr;padding:6px 8px}.card-option strong{font-size:10px;letter-spacing:1px}}
 @media(max-width:560px){header .top-note{display:none!important}}

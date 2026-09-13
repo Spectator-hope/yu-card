@@ -84,10 +84,12 @@ async function loadSelectedCard(){
 }
 function setupCardSwitcher(){
  const nav=document.createElement('nav');nav.className='card-switcher';nav.setAttribute('aria-label','切换收藏卡');
- const caption=document.createElement('span');caption.textContent='COLLECTION INDEX';nav.append(caption);
- const list=document.createElement('div');list.className='card-list';nav.append(list);
+ const toggle=document.createElement('button');toggle.type='button';toggle.className='card-switcher-toggle';toggle.setAttribute('aria-expanded','true');toggle.setAttribute('aria-controls','card-switcher-list');
+ const toggleCopy=document.createElement('span');toggleCopy.className='card-switcher-copy';const toggleKicker=document.createElement('small');toggleKicker.textContent='COLLECTION INDEX';const toggleTitle=document.createElement('strong');toggleTitle.textContent='切换收藏卡';toggleCopy.append(toggleKicker,toggleTitle);const toggleIcon=document.createElement('span');toggleIcon.className='card-switcher-icon';toggleIcon.setAttribute('aria-hidden','true');toggleIcon.textContent='⌄';toggle.append(toggleCopy,toggleIcon);nav.append(toggle);
+ const list=document.createElement('div');list.id='card-switcher-list';list.className='card-list';nav.append(list);
+ toggle.onclick=()=>{const expanded=toggle.getAttribute('aria-expanded')==='true';toggle.setAttribute('aria-expanded',String(!expanded));nav.classList.toggle('is-collapsed',expanded);};
  for(const entry of catalog.cards){const button=document.createElement('button');button.type='button';button.className='card-option';button.setAttribute('aria-pressed',String(entry.id===activeCardId));const number=document.createElement('span');number.textContent=entry.number;const label=document.createElement('strong');label.textContent=entry.label;button.append(number,label);button.onclick=()=>{if(entry.id===activeCardId)return;stage.classList.add('is-switching');setTimeout(()=>{const next=new URL(location.href);next.searchParams.set('card',entry.id);location.assign(next);},180);};list.append(button);}
- document.querySelector('.display').prepend(nav);
+ document.querySelector('.story').append(nav);
  const active=catalog.cards.find(item=>item.id===activeCardId);const edition=document.querySelector('.edition');if(active&&edition.firstChild)edition.firstChild.textContent='COLLECTION '+active.number+' ';
 }
 async function init(){
